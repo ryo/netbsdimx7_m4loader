@@ -17,6 +17,14 @@
     write m4.bin 2284 bytes
     Hello CortexM4
 
+## m4loader
+
+read "m4.bin" and write to physical memory 0x007f8000 using /dev/mem, and reset CortexM4.
+
 ## test program
 
 output "Hello CortexM4" to UART5 (imxuart4 at axi0 addr 0x30a70000 intr 62).
+
+## reference
+
+http://cache.nxp.com/files/soft_dev_tools/doc/app_note/AN5317.pdf - Loading Code on Cortex-M4 from Linux for the i.MX 6SoloX and i.MX 7Dual/7Solo Application Processors
