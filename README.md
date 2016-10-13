@@ -14,6 +14,7 @@
     gcc -I/usr/src/sys/arch m4loader.c -o m4loader
 
     # sudo m4loader
+    write m4.bin 2284 bytes
     Hello CortexM4
 
 ## test program
