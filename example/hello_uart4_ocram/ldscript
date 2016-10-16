@@ -1,0 +1,22 @@
+OUTPUT_ARCH(arm)
+SECTIONS
+{
+	.text :
+	{
+		*(.text)
+		*(.text.*)
+	}
+	. = ALIGN(32);
+	.data :
+	{
+	}
+	. = ALIGN(32);
+	.sbss :
+	{
+	}
+	. = ALIGN(32);
+	.bss :
+	{
+	}
+}
+
