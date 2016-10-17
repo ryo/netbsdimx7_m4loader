@@ -53,9 +53,9 @@ m4_stop(void)
 	memopen();
 
 #define SRC_BASE	0x30390000
-	/* disable M4 core */
+	/* assert M4 core reset */
 	v = memread4(SRC_BASE + SRC_M4RCR);
-	v &= ~SRC_M4RCR_ENABLE_M4;
+	v |= SRC_M4RCR_SW_M4C_NON_SCLR_RST;
 	memwrite4(SRC_BASE + SRC_M4RCR, v);
 }
 
@@ -66,12 +66,7 @@ m4_reset(void)
 
 	memopen();
 
-	/* disable M4 core */
-	v = memread4(SRC_BASE + SRC_M4RCR);
-	v &= ~SRC_M4RCR_ENABLE_M4;
-	memwrite4(SRC_BASE + SRC_M4RCR, v);
-
-	/* enable M4 core */
+	/* reset M4 core */
 	v = memread4(SRC_BASE + SRC_M4RCR);
 	v |= SRC_M4RCR_ENABLE_M4;
 	memwrite4(SRC_BASE + SRC_M4RCR, v);
