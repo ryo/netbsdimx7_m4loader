@@ -84,6 +84,23 @@ m4_reset(void)
 	v = memread4(SRC_BASE + SRC_M4RCR);
 	v |= SRC_M4RCR_SW_M4C_RST;
 	memwrite4(SRC_BASE + SRC_M4RCR, v);
+
+	if (verbose)
+		fprintf(stderr, "Resetting Cortex-M4...");
+
+	/* wait reset done */
+	for (;;) {
+		v = memread4(SRC_BASE + SRC_M4RCR);
+		if ((v & SRC_M4RCR_SW_M4C_RST) == 0)
+			break;
+		usleep(100000);
+	}
+
+	if (verbose)
+		fprintf(stderr, "done\n");
+
+
+
 }
 
 static int
@@ -162,11 +179,13 @@ debugdump()
 {
 	uint32_t v;
 
+	memopen();
+
 	for (;;) {
 		v = memread4(TCM_ADDR);
-		printf("TCM_L  :  0x%p = %08x\n", TCM_ADDR, v);
+		printf("TCM_L  :0x%p = %08x\n", TCM_ADDR, v);
 		v = memread4(TCM_ADDR + 4);
-		printf("TCM_L  :  0x%p = %08x\n", TCM_ADDR + 4, v);
+		printf("TCM_L  :0x%p = %08x\n", TCM_ADDR + 4, v);
 		v = memread4(OCRAM_S_ADDR);
 		printf("OCRAM_S:0x%p = %08x\n", OCRAM_S_ADDR, v);
 		v = memread4(OCRAM_S_ADDR + 4);
@@ -340,6 +359,10 @@ main(int argc, char *argv[])
 			} else if (strcmp(argv[i], "reset") == 0) {
 				if (dry_run == 0)
 					m4_reset();
+
+			} else if (strcmp(argv[i], "debug") == 0) {
+				if (dry_run == 0)
+					debugdump();
 
 			} else {
 				fprintf(stderr, "unknown command: %s\n",
