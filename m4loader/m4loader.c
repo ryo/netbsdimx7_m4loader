@@ -24,10 +24,15 @@ usage(void)
 	fprintf(stderr, "\n");
 	fprintf(stderr, "	command:\n");
 	fprintf(stderr, "	    load <address> <file>\n");
+	fprintf(stderr, "	        load <file> to <address>\n");
 	fprintf(stderr, "	    loadv <address> <file>\n");
+	fprintf(stderr, "	        load <file> to <address> with copying vectors to OCRAM\n");
 	fprintf(stderr, "	    stop\n");
+	fprintf(stderr, "	        stop Cortex-M4 core\n");
 	fprintf(stderr, "	    reset\n");
+	fprintf(stderr, "	        reset Cortex-M4 core\n");
 	fprintf(stderr, "	    dump <address>\n");
+	fprintf(stderr, "	        dump specified address of physical memory\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "	e.g.\n");
 	fprintf(stderr, "	    m4loader -v load ocram m4.bin reset\n");
