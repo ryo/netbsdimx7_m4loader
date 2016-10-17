@@ -21,6 +21,9 @@ m4.elf: m4_start.o m4_main.o
 run:
 	sudo m4loader load ocram m4.bin reset
 
+stop:
+	sudo m4loader stop
+
 clean:
 	rm -f *.o m4.bin m4.elf m4.map
 
