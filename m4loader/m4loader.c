@@ -31,7 +31,8 @@ usage(void)
 	fprintf(stderr, "	        stop Cortex-M4 core\n");
 	fprintf(stderr, "	    reset\n");
 	fprintf(stderr, "	        reset Cortex-M4 core\n");
-	fprintf(stderr, "	    dump <address>\n");
+	fprintf(stderr, "	    dump <address>[-<address>]\n");
+	fprintf(stderr, "	    dump <address>[:<size>]\n");
 	fprintf(stderr, "	        dump specified address of physical memory\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "	e.g.\n");
@@ -128,23 +129,30 @@ m4_load(uint32_t addr, const char *filename, int setupSPPC)
 
 
 static void
-memdump(uint32_t address)
+memdump(uint32_t address, uint32_t size)
 {
-	unsigned char buf[256];
+	unsigned char buf[16];
 	int i;
 
 	memopen();
-	memread(address, buf, sizeof(buf));
 
-	for (i = 0; i < sizeof(buf); i++) {
-		if ((i & 15) == 0)
-			printf("%08x:", address + i);
+	for (i = 0; i < size; i++) {
+		if ((i & 15) == 0) {
+			printf("%08x:", address);
+
+			memread(address, buf, sizeof(buf));
+			address += sizeof(buf);
+		}
 
 		printf(" %02x", buf[i]);
 
 		if ((i & 15) == 15)
 			printf("\n");
 	}
+
+	if ((i & 15) != 0)
+		printf("\n");
+
 	printf("\n");
 }
 
@@ -170,28 +178,116 @@ debugdump()
 }
 
 static int
+parsehex(const char *str, uint32_t *value)
+{
+	char *ep;
+
+	*value = strtoul(str, &ep, 16);
+	if (*ep == '\0')
+		return 0;
+	return -1;
+}
+
+static int
+parsenum(const char *str, uint32_t *value)
+{
+	char *ep;
+
+	if (strncasecmp(str, "0x", 2) == 0) {
+		*value = strtoul(str, &ep, 16);
+		if (*ep == '\0')
+			return 0;
+	} else {
+		*value = strtoul(str, &ep, 10);
+		if (*ep == '\0')
+			return 0;
+	}
+	return -1;
+}
+
+static int
 parseaddr(const char *addrstr, uint32_t *addr)
 {
-	if (strncasecmp(addrstr, "0x", 2) == 0) {
-		*addr = strtoul(addrstr, NULL, 16);
-	} else if (strcasecmp(addrstr, "ocram") == 0) {
+	if (strcasecmp(addrstr, "ocram") == 0) {
 		*addr = OCRAM_S_ADDR;
 	} else if (strcasecmp(addrstr, "tcm") == 0) {
 		*addr = TCM_ADDR;
 	} else if (strcasecmp(addrstr, "ddr") == 0) {
 		*addr = DDR_ADDR;
-	} else {
+	} else if (parsehex(addrstr, addr) != 0) {
 		fprintf(stderr, "%s: illegal load address\n", addrstr);
 		return -1;
 	}
 	return 0;
 }
 
+static int
+parseaddrrange(const char *addrstr, uint32_t *addr, uint32_t *size)
+{
+	char *p, *q, *s, *e;
+	uint32_t eaddr;
+	int rc;
+
+	p = strdup(addrstr);
+	if (p == NULL)
+		err(3, "malloc");
+
+	rc = 0;
+
+	/*
+	 * parse "address:size" or
+	 "       "address-address"
+	 */
+	if ((q = index(p, ':')) != NULL) {
+		*q++ = '\0';
+		if (parsehex(p, addr) != 0) {
+			fprintf(stderr, "%s: illegal address\n", addrstr);
+			rc = -1;
+			goto done;
+		}
+		if (parsenum(q, size) != 0) {
+			fprintf(stderr, "%s: illegal size\n", addrstr);
+			rc = -1;
+			goto done;
+		}
+	} else if ((q = index(p, '-')) != NULL) {
+		*q++ = '\0';
+		if (parsehex(p, addr) != 0) {
+			fprintf(stderr, "%s: illegal address\n", addrstr);
+			rc = -1;
+			goto done;
+		}
+		if (parsehex(q, &eaddr) != 0) {
+			fprintf(stderr, "%s: illegal address\n", addrstr);
+			rc = -1;
+			goto done;
+		}
+		if (*addr >= eaddr) {
+			fprintf(stderr, "%s: illegal range\n", addrstr);
+			rc = -1;
+			goto done;
+		}
+		*size = eaddr - *addr;
+
+	} else {
+		if (parsehex(p, addr) != 0) {
+			fprintf(stderr, "%s: illegal address\n", addrstr);
+			rc = -1;
+			goto done;
+		}
+		*size = 0x100;
+	}
+
+ done:
+	free(p);
+	return rc;
+}
+
 int
 main(int argc, char *argv[])
 {
 	int argleft, ch, i, dry_run;
-	uint32_t address;
+	uint32_t address, dumpsize = 0x100;
 	const char *addrstr, *filename;
 
 	while ((ch = getopt(argc, argv, "v")) != -1) {
@@ -221,17 +317,21 @@ main(int argc, char *argv[])
 					usage();
 				addrstr = argv[++i];
 				filename = argv[++i];
-				if (parseaddr(addrstr, &address) == 0)
+				if (parseaddr(addrstr, &address) == 0) {
 					if (dry_run == 0)
 						m4_load(address, filename, setupSPPC);
+				} else
+					dry_run = -1;
 
 			} else if (strcmp(argv[i], "dump") == 0) {
 				if (argleft < 2)
 					usage();
 				addrstr = argv[++i];
-				if (parseaddr(addrstr, &address) == 0)
+				if (parseaddrrange(addrstr, &address, &dumpsize) == 0) {
 					if (dry_run == 0)
-						memdump(address);
+						memdump(address, dumpsize);
+				} else
+					dry_run = -1;
 
 			} else if (strcmp(argv[i], "stop") == 0) {
 				if (dry_run == 0)
