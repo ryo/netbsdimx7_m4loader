@@ -173,7 +173,7 @@ static int
 parseaddr(const char *addrstr, uint32_t *addr)
 {
 	if (strncasecmp(addrstr, "0x", 2) == 0) {
-		*addr = strtol(addrstr, NULL, 16);
+		*addr = strtoul(addrstr, NULL, 16);
 	} else if (strcasecmp(addrstr, "ocram") == 0) {
 		*addr = OCRAM_S_ADDR;
 	} else if (strcasecmp(addrstr, "tcm") == 0) {
