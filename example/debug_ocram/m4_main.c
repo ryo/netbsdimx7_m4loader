@@ -28,17 +28,16 @@ xputs(char *s)
 void
 cortexM4_main(void)
 {
+	unsigned int i, j;
 	volatile unsigned int *tcml = 0x1fff8000;	// debug
 
-	*tcml = 0x01020304;
+	for (i = 0;; i++) {
+		*tcml = i;
 
-#if 1
-	for (;;) {
-		(*tcml)++;
+		xputs("#");
+
+		for (j = 0; j < 0x80000; j++) {
+			asm("nop");
+		}
 	}
-#endif
-
-	xputs("Hello CortexM4\r\n");
-	for (;;)
-		asm("wfi");
 }
