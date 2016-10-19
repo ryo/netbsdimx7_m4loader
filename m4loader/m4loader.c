@@ -289,8 +289,7 @@ parseaddrrange(const char *addrstr, uint32_t *addr, uint32_t *size)
 		*size = eaddr - *addr;
 
 	} else {
-		if (parsehex(p, addr) != 0) {
-			fprintf(stderr, "%s: illegal address\n", addrstr);
+		if (parseaddr(p, addr) != 0) {
 			rc = -1;
 			goto done;
 		}
